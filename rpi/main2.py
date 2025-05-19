@@ -6,13 +6,16 @@ import time
 import threading
 import paho.mqtt.client as mqtt
 
-MQTT_BROKER = "172.21.20.108"  # e.g., "192.168.1.100"
+MQTT_BROKER = "172.21.20.108"
 MQTT_PORT = 1883
 MQTT_TOPIC = "alert/person_detected"
-
+MQTT_PW = 2
+MQTT_USER = "esp32cam"
 mqtt_client = mqtt.Client()
+mqtt_client.username_pw_set(MQTT_USER, MQTT_PW)
 mqtt_client.connect(MQTT_BROKER, MQTT_PORT, 60)
-# MediaPipe setup
+
+
 BaseOptions = mp.tasks.BaseOptions
 DetectionResult = mp.tasks.components.containers.DetectionResult
 ObjectDetector = mp.tasks.vision.ObjectDetector
@@ -82,12 +85,12 @@ with ObjectDetector.create_from_options(options) as detector:
         current_time = time.time()
         if person_detected_this_frame:
             if person_start_time is None:
-                person_start_time = current_time  # Start timer
+                person_start_time = current_time
             elif not warning_triggered and current_time - person_start_time >= 10:
                 print("⚠️ WARNING: Person detected for 10 seconds!")
                 mqtt_client.publish(
                     MQTT_TOPIC, "Person detected for 10 seconds!")
-                warning_triggered = True  # Avoid repeated warnings
+                warning_triggered = True
         else:
             person_start_time = None
             warning_triggered = False
